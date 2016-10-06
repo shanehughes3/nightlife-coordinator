@@ -1,0 +1,25 @@
+{
+  "name": "nightlife-coordinator",
+  "version": "0.0.1",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shanehughes3/nightlife-coordinator.git"
+  },
+  "author": "Shane Hughes",
+  "license": "GPL-2.0+",
+  "bugs": {
+    "url": "https://github.com/shanehughes3/nightlife-coordinator/issues"
+  },
+  "homepage": "https://github.com/shanehughes3/nightlife-coordinator#readme",
+  "dependencies": {
+    "express": "^4.14.0",
+    "mongoose": "^4.6.2",
+    "node-yelp": "0.0.3"
+  }
+}
