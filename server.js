@@ -1,27 +1,15 @@
 const express = require("express"),
       app = express(),
-      yelp = require("node-yelp"),
-      config = require("./config");
+      morgan = require("morgan"),
+      pug = require("pug"),
+      config = require("./config"),
+      routes = require("./routes/routes");
 
-var client = yelp.createClient({
-    oauth: {
-	consumer_key: config.consumerKey,
-	consumer_secret: config.consumerSecret,
-	token: config.token,
-	token_secret: config.tokenSecret
-    }
-});
-    
+app.use(morgan("dev"));
 
-app.get("/search", function(req, res) {
-    client.search({
-	term: "bar",
-	location: req.query.location
-    }).then(function(data) {
-	res.send(data);
-    }).catch(function(err) {
-	console.log(err);
-    });
-});
+app.use(express.static(__dirname + "/public"));
+app.set("view engine", "pug");
+
+app.use(routes);
 
 app.listen(config.port);
