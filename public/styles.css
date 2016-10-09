@@ -1,0 +1,30 @@
+
+/* RESULTS LIST
+ */
+.result {
+    text-decoration: none;
+    overflow: hidden;
+    margin: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid black;
+}
+.result-thumbnail {
+    width: 100px;
+    height: 100px;
+    display: inline-block;
+    vertical-align: text-top;
+}
+.result-details {
+    padding-left: 10px;
+    padding-right: 10px;
+    display: inline-block;
+    vertical-align: text-top;
+    max-width: 600px;
+}
+.result-name {
+}
+.result-text {
+    vertical-align: bottom;
+    display: inline-block;
+    height: 100%;
+}
