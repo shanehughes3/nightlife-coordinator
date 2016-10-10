@@ -4,7 +4,38 @@ html
 		block title
 		link(rel="stylesheet" type="text/css" href="/styles.css")
 	body
+		div(id="header-bar")
+			div(id="login-view-button")
+				| Log In
+			div(id="logout-button")
+				| Log Out
 
+		div(id="login-dialog" class="modal-dialog")
+			div
+				form(action="javascript:void(0)")
+					div(id="login-close-button") X
+					div
+						input(
+							type="text"
+							name="username"
+							placeholder="Username"
+							id="login-username"
+							autofocus
+						)
+					div
+						input(
+							type="password"
+							name="password"
+							placeholder="Password"
+							id="login-password"
+						)
+					div
+						input(
+							type="submit"
+							value="Submit"
+							id="login-submit-button"
+						)
+					
 		block content
 
 		script(

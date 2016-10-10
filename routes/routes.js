@@ -1,5 +1,6 @@
 const express = require("express"),
       router = express.Router(),
+      passport = require("passport"),
       yelp = require("node-yelp"),
       config = require("../config");
 
@@ -29,5 +30,19 @@ router.get("/search", function(req, res) {
     });
 });
 
+router.post("/login", passport.authenticate("local", {failWithError: false}),
+	    loginSuccess, loginFailure);
 
+function loginSuccess(req, res, next) {
+    res.send("success");
+}
+
+function loginFailure(req, res, next) {
+    if (err.name == "AuthenticationError") {
+	res.send("Invalid username or password");
+    } else {
+	res.send("Unknown error");
+    }
+}
+	    
 module.exports = router;
