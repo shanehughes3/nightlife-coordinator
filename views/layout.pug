@@ -5,9 +5,20 @@ html
 		link(rel="stylesheet" type="text/css" href="/styles.css")
 	body
 		div(id="header-bar")
-			div(id="login-view-button")
+			div(
+				id="greeting"
+				style=(user ? "display: inline-block;" : false)
+			)
+				| #{user}
+			div(
+				id="login-view-button"
+				style=(user ? "display:none;" : false)
+			)
 				| Log In
-			div(id="logout-button")
+			div(
+				id="logout-button"
+				style=(user ? "display: inline-block;" : false)
+			)
 				| Log Out
 
 		div(id="login-dialog" class="modal-dialog")

@@ -15,7 +15,11 @@ var client = yelp.createClient({
 });
 
 router.get("/", function(req, res) {
-    res.render("index");
+    if (req.user) {
+	res.render("index", {user: req.user.username});
+    } else {
+	res.render("index");
+    }
 });
 
 router.get("/search", function(req, res) {
@@ -48,8 +52,17 @@ function loginFailure(req, res, next) {
 
 router.post("/register", function(req, res) {
     auth.register(req, res, function(err, user) {
-	res.json(user);
+	if (err) {
+	    res.send(err);
+	} else {
+	    res.json(user);
+	}
     });
+});
+
+router.get("/logout", function(req, res) {
+    req.logout();
+    res.json({success: true});
 });
 	    
 module.exports = router;

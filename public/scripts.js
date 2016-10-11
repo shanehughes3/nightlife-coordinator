@@ -11,6 +11,7 @@ function bindButtons() {
     $("login-close-button").onclick = () => {closeDialog("login-dialog");};
     $("login-submit-button").onclick = submitLogin;
     $("register-submit-button").onclick = handleRegisterClick;
+    $("logout-button").onclick = logOut;
 }
 
 // SEARCH/DISPLAY RESULTS
@@ -148,4 +149,29 @@ function handleRegisterResponse(response) {
 
 function handleRegisterError(err) {
     console.log(err);
+}
+
+// LOG OUT
+
+function logOut() {
+    var xhr = new XMLHttpRequest();
+    xhr.addEventListener("load", () => handleLogoutSuccess(xhr.responseText));
+    xhr.addEventListener("error", handleLogoutError);
+    xhr.addEventListener("abort", handleLogoutError);
+    xhr.open("GET", "/logout");
+    xhr.send(null);
+}
+
+function handleLogoutSuccess(response) {
+    response = JSON.parse(response);
+    if (response.success) {
+	$("greeting").style.display = "none";
+	$("greeting").innerHTML = "";
+	$("login-view-button").style.display = "inline-block";
+	$("logout-button").style.display = "none";
+    }
+}
+
+function handleLogoutError() {
+
 }
