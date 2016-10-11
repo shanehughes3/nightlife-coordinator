@@ -10,6 +10,7 @@ function bindButtons() {
     $("login-view-button").onclick = () => {showDialog("login-dialog");};
     $("login-close-button").onclick = () => {closeDialog("login-dialog");};
     $("login-submit-button").onclick = submitLogin;
+    $("register-submit-button").onclick = handleRegisterClick;
 }
 
 // SEARCH/DISPLAY RESULTS
@@ -71,9 +72,15 @@ function closeDialog(dialog) {
     $(dialog).style.pointerEvents = "none";
 }
 
+function clearFormMessages() {
+    $("login-message").innerHTML = "";
+    $("register-message").innerHTML = "";
+}
+
 // LOGIN
 
 function submitLogin() {
+    clearFormMessages();
     var params = {
 	username: $("login-username").value,
 	password: $("login-password").value
@@ -92,5 +99,53 @@ function handleLoginResponse(response) {
 }
 
 function handleLoginError(err) {
+    console.log(err);
+}
+
+// REGISTER
+
+function handleRegisterClick() {
+    clearFormMessages();
+    if (checkRegisterForm()) {
+	submitRegister();
+    }
+}
+
+function checkRegisterForm() {
+    if ($("register-username").value === "" ||
+	$("register-password").value === "") {
+	$("register-message").innerHTML = "All forms must be completed";
+	return false;
+    } else if ($("register-password").value !==
+	       $("register-verify-password").value) {
+	$("register-message").innerHTML = "Passwords do not match";
+	return false;
+    } else if ($("register-password").value.length < 8) {
+	$("register-message").innerHTML = "Password must be at least " +
+	    "8 characters";
+    } else {
+	return true;
+    }
+}
+
+function submitRegister() {
+    var params = {
+	username: $("register-username").value,
+	password: $("register-password").value
+    };
+    var xhr = new XMLHttpRequest();
+    xhr.addEventListener("load", handleRegisterResponse);
+    xhr.addEventListener("error", handleRegisterError);
+    xhr.addEventListener("abort", handleRegisterError);
+    xhr.open("POST", "/register");
+    xhr.setRequestHeader("Content-type", "application/json");
+    xhr.send(JSON.stringify(params));
+}
+
+function handleRegisterResponse(response) {
+    console.log(response);
+}
+
+function handleRegisterError(err) {
     console.log(err);
 }

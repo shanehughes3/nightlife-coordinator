@@ -12,30 +12,61 @@ html
 
 		div(id="login-dialog" class="modal-dialog")
 			div
-				form(action="javascript:void(0)")
-					div(id="login-close-button") X
-					div
-						input(
-							type="text"
-							name="username"
-							placeholder="Username"
-							id="login-username"
-							autofocus
-						)
-					div
-						input(
-							type="password"
-							name="password"
-							placeholder="Password"
-							id="login-password"
-						)
-					div
-						input(
-							type="submit"
-							value="Submit"
-							id="login-submit-button"
-						)
-					
+				div(id="login-close-button") X
+				div
+					form(action="javascript:void(0)")
+						div
+							input(
+								type="text"
+								name="username"
+								placeholder="Username"
+								id="login-username"
+								autofocus
+							)
+						div
+							input(
+								type="password"
+								name="password"
+								placeholder="Password"
+								id="login-password"
+							)
+						div
+							input(
+								type="submit"
+								value="Log In"
+								id="login-submit-button"
+							)
+						div(id="login-message")
+				div
+					form(action="javascript:void(0)")
+						div
+							input(
+								type="text"
+								name="username"
+								placeholder="Username"
+								id="register-username"
+							)
+						div
+							input(
+								type="password"
+								name="password"
+								placeholder="Password"
+								id="register-password"
+							)
+						div
+							input(
+								type="password"
+								name="password-verify"
+								placeholder="Verify password"
+								id="register-verify-password"
+							)
+						div
+							input(
+								type="submit"
+								value="Register"
+								id="register-submit-button"
+							)
+						div(id="register-message")
 		block content
 
 		script(

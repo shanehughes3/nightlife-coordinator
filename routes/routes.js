@@ -2,7 +2,8 @@ const express = require("express"),
       router = express.Router(),
       passport = require("passport"),
       yelp = require("node-yelp"),
-      config = require("../config");
+      config = require("../config"),
+      auth = require("../auth");
 
 var client = yelp.createClient({
     oauth: {
@@ -44,5 +45,11 @@ function loginFailure(req, res, next) {
 	res.send("Unknown error");
     }
 }
+
+router.post("/register", function(req, res) {
+    auth.register(req, res, function(err, user) {
+	res.json(user);
+    });
+});
 	    
 module.exports = router;
