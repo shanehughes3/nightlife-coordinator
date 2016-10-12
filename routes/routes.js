@@ -3,7 +3,8 @@ const express = require("express"),
       passport = require("passport"),
       yelp = require("node-yelp"),
       config = require("../config"),
-      auth = require("../auth");
+      auth = require("../auth"),
+      db = require("../db");
 
 var client = yelp.createClient({
     oauth: {
@@ -29,17 +30,40 @@ router.get("/search", function(req, res) {
 	limit: 15,
 	offset: req.query.offset || 0
     }).then(function(data) {
-	res.send(data);
+	addGoingData(data, function(output) {
+	    res.send(data);
+	});
     }).catch(function(err) {
 	console.log(err);
+	// TODO
     });
 });
 
-router.post("/login", passport.authenticate("local", {failWithError: false}),
+function addGoingData(data, cb) {
+    var requests = data.businesses.map(function(business, index) {
+	return new Promise((resolve) => {
+	    db.retrieveGoing(business.id, function(err, numberGoing) {
+		if (err) {
+		    console.log(err);
+		    resolve();
+		} else {
+		    data.businesses[index].going = numberGoing;
+		    resolve();
+		}
+	    });
+	});
+    });
+
+    Promise.all(requests).then(() => {
+	cb(data);
+    });
+}
+
+router.post("/login", passport.authenticate("local", {failWithError: true}),
 	    loginSuccess, loginFailure);
 
 function loginSuccess(req, res, next) {
-    res.send("success");
+    res.json({username: req.user.username});
 }
 
 function loginFailure(req, res, next) {

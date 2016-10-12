@@ -6,7 +6,7 @@ var $ = document.getElementById.bind(document);
 document.addEventListener("DOMContentLoaded", bindButtons);
 
 function bindButtons() {
-    $("search-button").onclick = submitQuery;
+    $("search-button").onclick = handleQueryClick;
     $("login-view-button").onclick = () => {showDialog("login-dialog");};
     $("login-close-button").onclick = () => {closeDialog("login-dialog");};
     $("login-submit-button").onclick = submitLogin;
@@ -15,6 +15,15 @@ function bindButtons() {
 }
 
 // SEARCH/DISPLAY RESULTS
+
+function handleQueryClick() {
+    if ($("search-term").value === "") {
+	$("message").innerHTML = "You must enter a search location";
+    } else {
+	$("message").innerHTML = "";
+	submitQuery();
+    }
+}
 
 function submitQuery() {
     var xhr = new XMLHttpRequest();
@@ -32,6 +41,7 @@ function yelpDataError() {
 
 function displayResults(response) {
     results = JSON.parse(response);
+    console.log(results); //////////////////
     var bars = results.businesses;
     var container = $("results");
     
@@ -87,20 +97,32 @@ function submitLogin() {
 	password: $("login-password").value
     };
     var xhr = new XMLHttpRequest();
-    xhr.addEventListener("load", handleLoginResponse);
+    xhr.addEventListener("load", () => handleLoginResponse(xhr.responseText));
     xhr.addEventListener("error", handleLoginError);
     xhr.addEventListener("abort", handleLoginError);
     xhr.open("POST", "/login");
     xhr.setRequestHeader("Content-Type", "application/json");
     xhr.send(JSON.stringify(params));
+    $("login-message").innerHTML = "Loading...";
 }
 
 function handleLoginResponse(response) {
-    console.log(response);
+    response = JSON.parse(response);
+    console.log(response); /////////////
+    $("login-message").innerHTML = "Success!";
+    setElementsLogIn(response.username);
+    window.setTimeout(closeDialog, 1000, "login-dialog");
 }
 
 function handleLoginError(err) {
     console.log(err);
+}
+
+function setElementsLogIn(username) {
+    $("greeting").innerHTML = username;
+    $("greeting").style.display = "inline-block";
+    $("login-view-button").style.display = "none";
+    $("logout-button").style.display = "inline-block";
 }
 
 // REGISTER
@@ -169,9 +191,11 @@ function handleLogoutSuccess(response) {
 	$("greeting").innerHTML = "";
 	$("login-view-button").style.display = "inline-block";
 	$("logout-button").style.display = "none";
+    } else {
+	// TODO
     }
 }
 
 function handleLogoutError() {
-
+    // TODO
 }

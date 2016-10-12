@@ -5,3 +5,52 @@ const mongoose = require("mongoose"),
 mongoose.Promise = global.Promise; // silence DeprecationWarning
 
 const db = mongoose.connect(config.db);
+
+var GoingSchema = new Schema({
+    user: String,
+    date: { type: Date, default: Date.now }
+});
+
+var BarSchema = new Schema({
+    barID: String,
+    going: [GoingSchema]
+});
+
+var Bar = mongoose.model("Bar", BarSchema);
+
+
+exports.setGoing = function(user, barID, cb) {
+    Bar.findOneAndUpdate(
+	{ barID: barID },
+	{ $push: { going: {user: user} } },
+	{ upsert: true, new: true, setDefaultsOnInsert: true },
+	function(err, result) {
+	    if (err) {
+		cb(err);
+	    } else {
+		cb(null, result);
+	    }
+	});
+}
+
+exports.retrieveGoing = function(barID, cb) {
+    Bar.findOne(
+	{ barID: barID },
+	"going",
+	function(err, results) {
+	    if (err) {
+		cb(err);
+	    } else {
+		if (results) {
+		    var goingToday = results.filter(function(node) {
+			return node.date.toDateString() ==
+			    Date.now.toDateString();
+		    });
+		    cb(null, goingToday.length);
+		} else {
+		    // if bar is not yet in the collection
+		    cb(null, 0);
+		}
+	    }
+	});
+}
