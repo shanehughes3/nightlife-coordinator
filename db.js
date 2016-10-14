@@ -42,9 +42,12 @@ exports.retrieveGoing = function(barID, cb) {
 		cb(err);
 	    } else {
 		if (results) {
-		    var goingToday = results.filter(function(node) {
+		    var today = new Date(Date.now());
+		    var goingToday = results.going.filter(function(node) {
+			// checks if same date, truncating time
+			// TODO - timezone?
 			return node.date.toDateString() ==
-			    Date.now.toDateString();
+			    today.toDateString();
 		    });
 		    cb(null, goingToday.length);
 		} else {

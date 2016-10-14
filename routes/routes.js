@@ -59,6 +59,27 @@ function addGoingData(data, cb) {
     });
 }
 
+router.post("/going", function(req, res) {
+    if (req.user) {
+	db.setGoing(req.user.username, req.body.yelpId, function(err, result) {
+	    if (err) {
+		res.json({
+		    success: false,
+		    error: "DatabaseError"
+		});
+		console.log(err); ///////////////
+	    } else {
+		res.json({success: true});
+	    }
+	});
+    } else {
+	res.json({
+	    success: false,
+	    error: "AuthenticationError"
+	});
+    }
+});
+
 router.post("/login", passport.authenticate("local", {failWithError: true}),
 	    loginSuccess, loginFailure);
 

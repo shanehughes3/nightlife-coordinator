@@ -2,8 +2,16 @@
 // SETUP
 
 var $ = document.getElementById.bind(document);
+var globalUsername = null;
 
-document.addEventListener("DOMContentLoaded", bindButtons);
+document.addEventListener("DOMContentLoaded", setup);
+
+function setup() {
+    bindButtons();
+    if ($("greeting").innerHTML != "") {
+	globalUsername = $("greeting").innerHTML;
+    }
+}
 
 function bindButtons() {
     $("search-button").onclick = handleQueryClick;
@@ -54,21 +62,58 @@ function displayResults(response) {
 function createResultElement(result) {
     var div = document.createElement("div");
     div.setAttribute("class", "result");
-    div.innerHTML = '<a href="' + result.url + '">' +
-	'<div class="result-thumbnail">' +
-	'<img src="' + result.image_url + '"></div>' +
-	'<div class="result-details">' +
-	'<div class="result-name">' + result.name + '</div>' +
-	'<div class="result-rating">' +
-	'<img src="' + result.rating_img_url_small + '"></div>' +
-	'<div class="result-text">' + result.snippet_text + '</div>' +
-	'</div>' +
-	'</a>';
+    var imGoingDisplay = (window.globalUsername) ? 
+	'style="display:inline-block"' :
+	'style="display:none"';
+    
+    div.innerHTML =
+	'<a href="' + result.url + '">' +
+	  '<div class="result-thumbnail">' +
+	    '<img src="' + result.image_url + '"></div>' +
+	  '<div class="result-details">' +
+	    '<div class="result-name">' + result.name + '</div>' +
+	    '<div class="result-rating">' +
+	      '<img src="' + result.rating_img_url_small + '"></div>' +
+	    '<div class="result-text">' + result.snippet_text + '</div>' +
+	  '</div>' +
+	'</a>' +
+	'<div class="im-going-button" ' + imGoingDisplay +
+	  ' onclick="setGoing(\'' + result.id + '\')">' + 'I\'m going!</div>' +
+	'<div class="result-going">' + result.going + ' Going</div>';
+
     return div;
 }
 
 function displayError(err) {
     $("message").innerHTML = err;
+}
+
+// SET "GOING"
+
+function setGoing(yelpId) {
+    if (window.globalUsername) {
+	var xhr = new XMLHttpRequest;
+	var payload = {
+	    yelpId: yelpId
+	};
+	xhr.addEventListener("load", () =>
+			     handleGoingResponse(xhr.responseText));
+	xhr.addEventListener("error", handleGoingError);
+	xhr.addEventListener("abort", handleGoingError);
+	xhr.open("POST", "/going");
+	xhr.setRequestHeader("Content-Type", "application/json");
+	xhr.send(JSON.stringify(payload));
+    } else {
+	// TODO "you must be logged in" dialog
+    }
+}
+
+function handleGoingResponse(response) {
+    
+}
+
+function handleGoingError() {
+    // TODO
 }
 
 // MODAL DIALOG
@@ -92,7 +137,7 @@ function clearFormMessages() {
 
 function submitLogin() {
     clearFormMessages();
-    var params = {
+    var payload = {
 	username: $("login-username").value,
 	password: $("login-password").value
     };
@@ -102,8 +147,8 @@ function submitLogin() {
     xhr.addEventListener("abort", handleLoginError);
     xhr.open("POST", "/login");
     xhr.setRequestHeader("Content-Type", "application/json");
-    xhr.send(JSON.stringify(params));
-    $("login-message").innerHTML = "Loading...";
+    xhr.send(JSON.stringify(payload));
+    $("login-message").innerHTML = "Logging in...";
 }
 
 function handleLoginResponse(response) {
@@ -120,9 +165,14 @@ function handleLoginError(err) {
 
 function setElementsLogIn(username) {
     $("greeting").innerHTML = username;
+    window.globalUsername = username;
     $("greeting").style.display = "inline-block";
     $("login-view-button").style.display = "none";
     $("logout-button").style.display = "inline-block";
+    var goingButtons = document.getElementsByClassName("im-going-button");
+    for (var i = 0; i < goingButtons.length; i++) {
+	goingButtons[i].style.display = "inline-block";
+    }
 }
 
 // REGISTER
@@ -187,12 +237,21 @@ function logOut() {
 function handleLogoutSuccess(response) {
     response = JSON.parse(response);
     if (response.success) {
-	$("greeting").style.display = "none";
-	$("greeting").innerHTML = "";
-	$("login-view-button").style.display = "inline-block";
-	$("logout-button").style.display = "none";
+	setElementsLogOut();
     } else {
 	// TODO
+    }
+}
+
+function setElementsLogOut() {
+    $("greeting").style.display = "none";
+    $("greeting").innerHTML = "";
+    window.globalUsername = undefined;
+    $("login-view-button").style.display = "inline-block";
+    $("logout-button").style.display = "none";
+    var goingButtons = document.getElementsByClassName("im-going-button");
+    for (var i = 0; i < goingButtons.length; i++) {
+	goingButtons[i].style.display = "none";
     }
 }
 
