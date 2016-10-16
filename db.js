@@ -33,6 +33,19 @@ exports.setGoing = function(user, barID, cb) {
 	});
 }
 
+exports.setNotGoing = function(user, barID, cb) {
+    Bar.findOneAndUpdate(
+	{ barID: barID },
+	{ $pull: { going: { user: user }}},
+	function(err, bar) {
+	    if (err) {
+		cb(err);
+	    } else {
+		cb(null, bar);
+	    }
+	});
+}
+
 exports.retrieveGoing = function(barID, cb) {
     Bar.findOne(
 	{ barID: barID },

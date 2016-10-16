@@ -63,22 +63,52 @@ router.post("/going", function(req, res) {
     if (req.user) {
 	db.setGoing(req.user.username, req.body.yelpId, function(err, result) {
 	    if (err) {
-		res.json({
-		    success: false,
-		    error: "DatabaseError"
-		});
-		console.log(err); ///////////////
+		sendDatabaseError(req, res);
 	    } else {
-		res.json({success: true});
+		sendGoingSuccess(req, res, result.barID);
 	    }
 	});
     } else {
-	res.json({
-	    success: false,
-	    error: "AuthenticationError"
-	});
+	sendErrorNotLoggedIn(req, res);
     }
 });
+
+router.post("/notgoing", function(req, res) {
+    if (req.user) {
+	db.setNotGoing(req.user.username, req.body.yelpId,
+		       function(err, result) {
+			   if (err) {
+			       sendDatabaseError(req, res);
+			   } else {
+			       sendGoingSuccess(req, res, result.barID);
+			   }
+		       });
+		     
+    } else {
+	sendErrorNotLoggedIn(req, res);
+    }
+});
+
+function sendGoingSuccess(req, res, barID) {
+    res.json({
+	success: true,
+	id: barID
+    });
+}
+
+function sendDatabaseError(req, res) {
+    res.json({
+	success: false,
+	error: "DatabaseError"
+    });
+}
+
+function sendErrorNotLoggedIn(req, res) {
+    res.json({
+	success: false,
+	error: "AuthenticationError"
+    });
+}
 
 router.post("/login", passport.authenticate("local", {failWithError: true}),
 	    loginSuccess, loginFailure);
@@ -87,11 +117,11 @@ function loginSuccess(req, res, next) {
     res.json({username: req.user.username});
 }
 
-function loginFailure(req, res, next) {
+function loginFailure(err, req, res, next) {
     if (err.name == "AuthenticationError") {
-	res.send("Invalid username or password");
+	res.json({error: "Invalid username or password"});
     } else {
-	res.send("Unknown error");
+	res.json({error: "An unknown error occurred"});
     }
 }
 

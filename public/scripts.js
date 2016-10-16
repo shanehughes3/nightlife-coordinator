@@ -8,16 +8,27 @@ document.addEventListener("DOMContentLoaded", setup);
 
 function setup() {
     bindButtons();
-    if ($("greeting").innerHTML != "") {
-	globalUsername = $("greeting").innerHTML;
+    if ($("greeting").textContent != "") {
+	globalUsername = $("greeting").textContent;
     }
 }
 
 function bindButtons() {
+    var dialogs = ["login-dialog", "message-dialog"];
+    
     $("search-button").onclick = handleQueryClick;
     $("login-view-button").onclick = () => {showDialog("login-dialog");};
     $("login-close-button").onclick = () => {closeDialog("login-dialog");};
-    $("login-submit-button").onclick = submitLogin;
+    dialogs.forEach(function(dialog) {
+	$(dialog).onclick = function(e) {
+	    // close when clicking outside window
+	    if (e.target == this) {
+		closeDialog(dialog);
+	    }
+	}
+    });
+    $("message-close-button").onclick = () => {closeDialog("message-dialog");};
+    $("login-submit-button").onclick = handleLoginClick;
     $("register-submit-button").onclick = handleRegisterClick;
     $("logout-button").onclick = logOut;
 }
@@ -26,9 +37,10 @@ function bindButtons() {
 
 function handleQueryClick() {
     if ($("search-term").value === "") {
-	$("message").innerHTML = "You must enter a search location";
+	$("message").textContent = "You must enter a search location";
+	showDialog("message-dialog");
     } else {
-	$("message").innerHTML = "";
+	$("message").textContent = "";
 	submitQuery();
     }
 }
@@ -49,7 +61,6 @@ function yelpDataError() {
 
 function displayResults(response) {
     results = JSON.parse(response);
-    console.log(results); //////////////////
     var bars = results.businesses;
     var container = $("results");
     
@@ -62,6 +73,7 @@ function displayResults(response) {
 function createResultElement(result) {
     var div = document.createElement("div");
     div.setAttribute("class", "result");
+    div.setAttribute("id", "result-" + result.id);
     var imGoingDisplay = (window.globalUsername) ? 
 	'style="display:inline-block"' :
 	'style="display:none"';
@@ -85,7 +97,9 @@ function createResultElement(result) {
 }
 
 function displayError(err) {
-    $("message").innerHTML = err;
+    $("message").textContent = err;
+    showDialog("message-dialog");
+    // TODO - specific errors per api
 }
 
 // SET "GOING"
@@ -104,16 +118,65 @@ function setGoing(yelpId) {
 	xhr.setRequestHeader("Content-Type", "application/json");
 	xhr.send(JSON.stringify(payload));
     } else {
-	// TODO "you must be logged in" dialog
+	displayError("You must be logged in to do that");
     }
 }
 
 function handleGoingResponse(response) {
-    
+    response = JSON.parse(response);
+    if (response.success) {
+	setImGoingElements(response.id);
+    } else {
+	displayError("Sorry, an error occurred");
+    }
+    console.log(response);
 }
 
 function handleGoingError() {
-    // TODO
+    displayError("Sorry, an unknown error occurred");
+}
+
+function setImGoingElements(id) {
+    var parent = $("result-" + id);
+    parent.insertBefore(createNotGoingElement(id),
+			parent.getElementsByClassName("im-going-button")[0]);
+    parent.getElementsByClassName("im-going-button")[0]
+	.style.display = "none";
+}
+
+function createNotGoingElement(id) {
+    var div = document.createElement("div");
+    div.setAttribute("class", "not-going-button");
+    div.setAttribute("onclick", "handleNotGoingClick('" + id + "')");
+    div.textContent = "Not going";
+    return div;
+}
+
+function handleNotGoingClick(id) {
+    if (window.globalUsername) {
+	var xhr = new XMLHttpRequest;
+	var payload = {
+	    yelpId: id
+	};
+	xhr.addEventListener("load", () =>
+			     handleNotGoingResponse(xhr.responseText));
+	xhr.addEventListener("error", handleGoingError);
+	xhr.addEventListener("abort", handleGoingError);
+	xhr.open("POST", "/notgoing");
+	xhr.setRequestHeader("Content-Type", "application/json");
+	xhr.send(JSON.stringify(payload));
+    } else {
+	displayError("You must be logged in to do that");
+    }
+}
+
+function handleNotGoingResponse(response) {
+    response = JSON.parse(response);
+    if (response.success) {
+	setNotGoingElements(response.id);
+    } else {
+	displayError("Sorry, an error occurred");
+    }
 }
 
 // MODAL DIALOG
@@ -129,11 +192,27 @@ function closeDialog(dialog) {
 }
 
 function clearFormMessages() {
-    $("login-message").innerHTML = "";
-    $("register-message").innerHTML = "";
+    $("login-message").textContent = "";
+    $("register-message").textContent = "";
 }
 
 // LOGIN
+
+function handleLoginClick() {
+    if (checkLoginForm()) {
+	submitLogin();
+    }
+}
+
+function checkLoginForm() {
+    if ($("login-username").value === "" ||
+	$("login-password").value === "") {
+	$("login-message").textContent = "All fields must be completed";
+	return false;
+    } else {
+	return true;
+    }
+}
 
 function submitLogin() {
     clearFormMessages();
@@ -148,23 +227,26 @@ function submitLogin() {
     xhr.open("POST", "/login");
     xhr.setRequestHeader("Content-Type", "application/json");
     xhr.send(JSON.stringify(payload));
-    $("login-message").innerHTML = "Logging in...";
+    $("login-message").textContent = "Logging in...";
 }
 
 function handleLoginResponse(response) {
     response = JSON.parse(response);
-    console.log(response); /////////////
-    $("login-message").innerHTML = "Success!";
-    setElementsLogIn(response.username);
-    window.setTimeout(closeDialog, 1000, "login-dialog");
+    if (response.error) {
+	$("login-message").textContent = response.error;
+    } else {
+	$("login-message").textContent = "Success!";
+	setElementsLogIn(response.username);
+	window.setTimeout(closeDialog, 1000, "login-dialog");
+    }
 }
 
 function handleLoginError(err) {
-    console.log(err);
+    $("login-message").textContent = "Sorry, an unknown error occurred";
 }
 
 function setElementsLogIn(username) {
-    $("greeting").innerHTML = username;
+    $("greeting").textContent = username;
     window.globalUsername = username;
     $("greeting").style.display = "inline-block";
     $("login-view-button").style.display = "none";
@@ -187,14 +269,14 @@ function handleRegisterClick() {
 function checkRegisterForm() {
     if ($("register-username").value === "" ||
 	$("register-password").value === "") {
-	$("register-message").innerHTML = "All forms must be completed";
+	$("register-message").textContent = "All fields must be completed";
 	return false;
     } else if ($("register-password").value !==
 	       $("register-verify-password").value) {
-	$("register-message").innerHTML = "Passwords do not match";
+	$("register-message").textContent = "Passwords do not match";
 	return false;
     } else if ($("register-password").value.length < 8) {
-	$("register-message").innerHTML = "Password must be at least " +
+	$("register-message").textContent = "Password must be at least " +
 	    "8 characters";
     } else {
 	return true;
@@ -245,7 +327,7 @@ function handleLogoutSuccess(response) {
 
 function setElementsLogOut() {
     $("greeting").style.display = "none";
-    $("greeting").innerHTML = "";
+    $("greeting").textContent = "";
     window.globalUsername = undefined;
     $("login-view-button").style.display = "inline-block";
     $("logout-button").style.display = "none";
