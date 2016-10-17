@@ -63,37 +63,153 @@ function displayResults(response) {
     results = JSON.parse(response);
     var bars = results.businesses;
     var container = $("results");
-    
-    for (var i = 0; i < 15; i++) {
-	var div = createResultElement(bars[i]);
-	container.appendChild(div);
-    }
+
+    bars.forEach(function(bar) {
+	var ThisBar = new BarResult(bar);
+	container.appendChild(ThisBar.createElement());
+    });
 }
 
-function createResultElement(result) {
-    var div = document.createElement("div");
-    div.setAttribute("class", "result");
-    div.setAttribute("id", "result-" + result.id);
-    var imGoingDisplay = (window.globalUsername) ? 
-	'style="display:inline-block"' :
-	'style="display:none"';
-    
-    div.innerHTML =
-	'<a href="' + result.url + '">' +
-	  '<div class="result-thumbnail">' +
-	    '<img src="' + result.image_url + '"></div>' +
-	  '<div class="result-details">' +
-	    '<div class="result-name">' + result.name + '</div>' +
-	    '<div class="result-rating">' +
-	      '<img src="' + result.rating_img_url_small + '"></div>' +
-	    '<div class="result-text">' + result.snippet_text + '</div>' +
-	  '</div>' +
-	'</a>' +
-	'<div class="im-going-button" ' + imGoingDisplay +
-	  ' onclick="setGoing(\'' + result.id + '\')">' + 'I\'m going!</div>' +
-	'<div class="result-going">' + result.going + ' Going</div>';
+function BarResult(barData) {
+    var self = this;
 
-    return div;
+    this.numberGoing = barData.going;
+    this.yelpId = barData.id
+
+    this.createElement = function() {
+	var div = document.createElement("div");
+	div.setAttribute("class", "result");
+	div.setAttribute("id", "result-" + self.yelpId);
+
+	div.appendChild(createElementStaticData());
+	div.appendChild(createElementGoingButton());
+	div.appendChild(createElementNotGoingButton());
+	div.appendChild(createElementNumberGoing());
+
+	return div;
+    }
+
+    function createElementStaticData() {
+	var node = document.createElement("a");
+	node.setAttribute("href", barData.url);
+	node.innerHTML =
+	    '<div class="result-thumbnail">' +
+	      '<img src="' + barData.image_url + '"></div>' +
+	    '<div class="result-details">' +
+	      '<div class="result-name">' + barData.name + '</div>' +
+	      '<div class="result-rating">' +
+	        '<img src="' + barData.rating_img_url_small + '"></div>' +
+	      '<div class="result-text">' + barData.snippet_text + '</div>' +
+	    '</div>';
+	return node;
+    }
+
+    function createElementGoingButton() {
+	var div = document.createElement("div");
+	div.setAttribute("class", "im-going-button");
+	div.style.display = (window.globalUsername) ?
+	    "inline-block" : "none";
+	div.addEventListener("click", self.setGoing);
+	div.textContent = "I\'m going!";
+	return div;
+    }
+    
+    function createElementNotGoingButton() {
+	var div = document.createElement("div");
+	div.setAttribute("class", "not-going-button");
+	div.onclick = self.handleNotGoingClick;
+	div.style.display = "none";
+	div.textContent = "Not going";
+	return div;
+    }
+    
+    function createElementNumberGoing() {
+	var div = document.createElement("div");
+	div.setAttribute("class", "result-going");
+	div.textContent = self.numberGoing + " Going";
+	return div;
+    }
+    
+    this.setGoing = function() {
+	if (window.globalUsername) {
+	    var xhr = new XMLHttpRequest;
+	    var payload = {
+		yelpId: self.yelpId
+	    };
+	    xhr.addEventListener("load", () =>
+			     handleGoingResponse(xhr.responseText));
+	    xhr.addEventListener("error", handleGoingError);
+	    xhr.addEventListener("abort", handleGoingError);
+	    xhr.open("POST", "/going");
+	    xhr.setRequestHeader("Content-Type", "application/json");
+	    xhr.send(JSON.stringify(payload));
+	} else {
+	    displayError("You must be logged in to do that");
+	}
+    }
+
+    function handleGoingResponse(response) {
+	response = JSON.parse(response);
+	if (response.success && response.id == self.yelpId) {
+	    self.numberGoing++;
+	    setImGoingElements();
+	} else {
+	    displayError("Sorry, an error occurred");
+	}
+    }
+
+    function handleGoingError() {
+	displayError("Sorry, an unknown error occurred");
+    }
+
+    function setImGoingElements() {
+	var parent = $("result-" + self.yelpId);
+	parent.getElementsByClassName("not-going-button")[0]
+	    .style.display = "inline-block";
+	parent.getElementsByClassName("im-going-button")[0]
+	    .style.display = "none";
+	parent.getElementsByClassName("result-going")[0].remove();
+	parent.appendChild(createElementNumberGoing());
+    }
+
+    this.handleNotGoingClick = function() {
+	if (window.globalUsername) {
+	    var xhr = new XMLHttpRequest;
+	    var payload = {
+		yelpId: self.yelpId
+	    };
+	    xhr.addEventListener("load", () =>
+				 handleNotGoingResponse(xhr.responseText));
+	    xhr.addEventListener("error", handleGoingError);
+	    xhr.addEventListener("abort", handleGoingError);
+	    xhr.open("POST", "/notgoing");
+	    xhr.setRequestHeader("Content-Type", "application/json");
+	    xhr.send(JSON.stringify(payload));
+	} else {
+	    displayError("You must be logged in to do that");
+	}
+    }
+
+    function handleNotGoingResponse(response) {
+	response = JSON.parse(response);
+	if (response.success && response.id == self.yelpId) {
+	    self.numberGoing--;
+	    setNotGoingElements();
+	} else {
+	    displayError("Sorry, an error occurred");
+	}
+    }
+
+    function setNotGoingElements() {
+	var parent = $("result-" + self.yelpId);
+	parent.getElementsByClassName("im-going-button")[0]
+	    .style.display = "inline-block";
+	parent.getElementsByClassName("not-going-button")[0]
+	    .style.display = "none";
+	parent.getElementsByClassName("result-going")[0].remove();
+	parent.appendChild(createElementNumberGoing());	
+    }
+    
 }
 
 function displayError(err) {
@@ -102,82 +218,7 @@ function displayError(err) {
     // TODO - specific errors per api
 }
 
-// SET "GOING"
 
-function setGoing(yelpId) {
-    if (window.globalUsername) {
-	var xhr = new XMLHttpRequest;
-	var payload = {
-	    yelpId: yelpId
-	};
-	xhr.addEventListener("load", () =>
-			     handleGoingResponse(xhr.responseText));
-	xhr.addEventListener("error", handleGoingError);
-	xhr.addEventListener("abort", handleGoingError);
-	xhr.open("POST", "/going");
-	xhr.setRequestHeader("Content-Type", "application/json");
-	xhr.send(JSON.stringify(payload));
-    } else {
-	displayError("You must be logged in to do that");
-    }
-}
-
-function handleGoingResponse(response) {
-    response = JSON.parse(response);
-    if (response.success) {
-	setImGoingElements(response.id);
-    } else {
-	displayError("Sorry, an error occurred");
-    }
-    console.log(response);
-}
-
-function handleGoingError() {
-    displayError("Sorry, an unknown error occurred");
-}
-
-function setImGoingElements(id) {
-    var parent = $("result-" + id);
-    parent.insertBefore(createNotGoingElement(id),
-			parent.getElementsByClassName("im-going-button")[0]);
-    parent.getElementsByClassName("im-going-button")[0]
-	.style.display = "none";
-}
-
-function createNotGoingElement(id) {
-    var div = document.createElement("div");
-    div.setAttribute("class", "not-going-button");
-    div.setAttribute("onclick", "handleNotGoingClick('" + id + "')");
-    div.textContent = "Not going";
-    return div;
-}
-
-function handleNotGoingClick(id) {
-    if (window.globalUsername) {
-	var xhr = new XMLHttpRequest;
-	var payload = {
-	    yelpId: id
-	};
-	xhr.addEventListener("load", () =>
-			     handleNotGoingResponse(xhr.responseText));
-	xhr.addEventListener("error", handleGoingError);
-	xhr.addEventListener("abort", handleGoingError);
-	xhr.open("POST", "/notgoing");
-	xhr.setRequestHeader("Content-Type", "application/json");
-	xhr.send(JSON.stringify(payload));
-    } else {
-	displayError("You must be logged in to do that");
-    }
-}
-
-function handleNotGoingResponse(response) {
-    response = JSON.parse(response);
-    if (response.success) {
-	setNotGoingElements(response.id);
-    } else {
-	displayError("Sorry, an error occurred");
-    }
-}
 
 // MODAL DIALOG
 
