@@ -41,17 +41,18 @@ function handleQueryClick() {
 	showDialog("message-dialog");
     } else {
 	$("message").textContent = "";
-	submitQuery();
+	submitQuery(null, $("search-term").value);
     }
 }
 
-function submitQuery() {
+function submitQuery(offset, term) {
     var xhr = new XMLHttpRequest();
-    var term = $("search-term").value;
-    xhr.addEventListener("load", () => displayResults(xhr.responseText));
+    var offsetQuery = (offset) ? "&offset=" + offset : "";
+    xhr.addEventListener("load", () =>
+			 displayResults(xhr.responseText, term, offset));
     xhr.addEventListener("error", yelpDataError);
     xhr.addEventListener("abort", yelpDataError);
-    xhr.open("GET", "/search?location=" + term);
+    xhr.open("GET", "/search?location=" + term + offsetQuery);
     xhr.send(null);
 }
 
@@ -59,15 +60,52 @@ function yelpDataError() {
     displayError("Error connecting to server");
 }
 
-function displayResults(response) {
+function displayResults(response, term, offset) {
+    // TODO - scroll to top
     results = JSON.parse(response);
     var bars = results.businesses;
     var container = $("results");
+    while (container.firstChild) {
+	container.removeChild(container.firstChild);
+    }
 
     bars.forEach(function(bar) {
 	var ThisBar = new BarResult(bar);
 	container.appendChild(ThisBar.createElement());
     });
+
+    if (results.total > 15) {
+	turnOnNextButton(offset, term);
+    } else {
+	turnOffNextButton();
+    }
+    if (offset > 0) {
+	turnOnPreviousButton(offset, term)
+    } else {
+	turnOffPreviousButton();
+    }
+}
+
+function turnOnNextButton(currentOffset, searchQuery) {
+    $("next-button").style.display = "inline-block";
+    $("next-button").onclick = () =>
+	submitQuery(currentOffset + 15, searchQuery);
+}
+
+function turnOffNextButton() {
+    $("next-button").style.display = "none";
+    $("next-button").onclick = null;
+}
+
+function turnOnPreviousButton(currentOffset, searchQuery) {
+    $("previous-button").style.display = "inline-block";
+    $("previous-button").onclick = () =>
+	submitQuery(currentOffset - 15, searchQuery);
+}
+
+function turnOffPreviousButton() {
+    $("previous-button").style.display = "none";
+    $("previous-button").onclick = null;
 }
 
 function BarResult(barData) {
