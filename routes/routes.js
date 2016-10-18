@@ -30,25 +30,44 @@ router.get("/search", function(req, res) {
 	limit: 15,
 	offset: req.query.offset || 0
     }).then(function(data) {
-	addGoingData(data, function(output) {
+	addGoingData(data, req.user, function(output) {
 	    res.send(data);
 	});
-    }).catch(function(err) {
+    }).catch(function(err, data) {
+	
+	res.json(err.source);
 	console.log(err);
 	// TODO
     });
 });
 
-function addGoingData(data, cb) {
+function addGoingData(data, user, cb) {
+    // TODO - clean up this mess
     var requests = data.businesses.map(function(business, index) {
 	return new Promise((resolve) => {
-	    db.retrieveGoing(business.id, function(err, numberGoing) {
+	    db.retrieveNumberGoing(business.id, function(err, numberGoing) {
 		if (err) {
 		    console.log(err);
 		    resolve();
 		} else {
 		    data.businesses[index].going = numberGoing;
-		    resolve();
+		    if (user) {
+			db.retrieveIsUserGoing(
+			    business.id,
+			    user.username,
+			    function(err, going) {
+				if (err) {
+				    cb(err);
+				} else {
+				    data.businesses[index].isUserGoing = going;
+				    resolve();
+				}
+			    });
+		    } else {
+			data.businesses[index].isUserGoing = false;
+			resolve();
+		    }
+			
 		}
 	    });
 	});

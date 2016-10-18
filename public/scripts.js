@@ -36,6 +36,7 @@ function bindButtons() {
 // SEARCH/DISPLAY RESULTS
 
 function handleQueryClick() {
+    $("search-button").textContent = "Loading...";
     if ($("search-term").value === "") {
 	$("message").textContent = "You must enter a search location";
 	showDialog("message-dialog");
@@ -58,29 +59,38 @@ function submitQuery(offset, term) {
 
 function yelpDataError() {
     displayError("Error connecting to server");
+    resetButtonsText();
 }
 
 function displayResults(response, term, offset) {
-    // TODO - scroll to top
+    resetButtonsText();
+    scrollUp();
     results = JSON.parse(response);
-    var bars = results.businesses;
-    var container = $("results");
-    while (container.firstChild) {
-	container.removeChild(container.firstChild);
+    if (results.businesses) {
+	var bars = results.businesses;
+	var container = $("results");
+	while (container.firstChild) {
+	    container.removeChild(container.firstChild);
+	}
+	
+	bars.forEach(function(bar) {
+	    var ThisBar = new BarResult(bar);
+	    container.appendChild(ThisBar.createElement());
+	});
+	setPaginationButtons(results.total, offset, term);
+    } else {
+	displayError(results.text);
     }
+}
 
-    bars.forEach(function(bar) {
-	var ThisBar = new BarResult(bar);
-	container.appendChild(ThisBar.createElement());
-    });
-
-    if (results.total > 15) {
-	turnOnNextButton(offset, term);
+function setPaginationButtons(resultsTotal, offset, searchTerm) {
+    if (resultsTotal > 15) {
+	turnOnNextButton(offset, searchTerm);
     } else {
 	turnOffNextButton();
     }
     if (offset > 0) {
-	turnOnPreviousButton(offset, term)
+	turnOnPreviousButton(offset, searchTerm)
     } else {
 	turnOffPreviousButton();
     }
@@ -88,8 +98,10 @@ function displayResults(response, term, offset) {
 
 function turnOnNextButton(currentOffset, searchQuery) {
     $("next-button").style.display = "inline-block";
-    $("next-button").onclick = () =>
+    $("next-button").onclick = function() {
+	$("next-button").textContent = "Loading...";
 	submitQuery(currentOffset + 15, searchQuery);
+    }
 }
 
 function turnOffNextButton() {
@@ -99,8 +111,10 @@ function turnOffNextButton() {
 
 function turnOnPreviousButton(currentOffset, searchQuery) {
     $("previous-button").style.display = "inline-block";
-    $("previous-button").onclick = () =>
+    $("previous-button").onclick = function() {
+	$("previous-button").textContent = "Loading...";
 	submitQuery(currentOffset - 15, searchQuery);
+    }
 }
 
 function turnOffPreviousButton() {
@@ -108,22 +122,38 @@ function turnOffPreviousButton() {
     $("previous-button").onclick = null;
 }
 
+function resetButtonsText() {
+    $("search-button").textContent = "Search";
+    $("previous-button").textContent = "Previous";
+    $("next-button").textContent = "Next";
+}
+
+function scrollUp() {
+    var duration = 1000;
+    var scrollPerTick = 5 * document.body.scrollTop / duration;
+
+    var scrolling = window.setInterval(function() {
+	document.body.scrollTop = document.body.scrollTop - scrollPerTick;
+	if (document.body.scrollTop == 0) {
+	    clearInterval(scrolling);
+	}
+    }, 5);
+}
+
 function BarResult(barData) {
     var self = this;
 
     this.numberGoing = barData.going;
     this.yelpId = barData.id
+    this.userGoing = barData.isUserGoing;
 
     this.createElement = function() {
 	var div = document.createElement("div");
 	div.setAttribute("class", "result");
 	div.setAttribute("id", "result-" + self.yelpId);
-
 	div.appendChild(createElementStaticData());
 	div.appendChild(createElementGoingButton());
-	div.appendChild(createElementNotGoingButton());
 	div.appendChild(createElementNumberGoing());
-
 	return div;
     }
 
@@ -144,23 +174,19 @@ function BarResult(barData) {
 
     function createElementGoingButton() {
 	var div = document.createElement("div");
-	div.setAttribute("class", "im-going-button");
+	div.setAttribute("class", "going-button");
 	div.style.display = (window.globalUsername) ?
 	    "inline-block" : "none";
-	div.addEventListener("click", self.setGoing);
-	div.textContent = "I\'m going!";
+	if (self.isUserGoing) {
+	    div.addEventListener("click", self.handleNotGoingClick);
+	    div.textContent = "Not going";
+	} else {
+	    div.addEventListener("click", self.setGoing);
+	    div.textContent = "I\'m going!";
+	}
 	return div;
     }
-    
-    function createElementNotGoingButton() {
-	var div = document.createElement("div");
-	div.setAttribute("class", "not-going-button");
-	div.onclick = self.handleNotGoingClick;
-	div.style.display = "none";
-	div.textContent = "Not going";
-	return div;
-    }
-    
+
     function createElementNumberGoing() {
 	var div = document.createElement("div");
 	div.setAttribute("class", "result-going");
@@ -189,8 +215,9 @@ function BarResult(barData) {
     function handleGoingResponse(response) {
 	response = JSON.parse(response);
 	if (response.success && response.id == self.yelpId) {
+	    self.isUserGoing = true;
 	    self.numberGoing++;
-	    setImGoingElements();
+	    setGoingElements();
 	} else {
 	    displayError("Sorry, an error occurred");
 	}
@@ -200,12 +227,18 @@ function BarResult(barData) {
 	displayError("Sorry, an unknown error occurred");
     }
 
-    function setImGoingElements() {
+    function setGoingElements() {
 	var parent = $("result-" + self.yelpId);
-	parent.getElementsByClassName("not-going-button")[0]
-	    .style.display = "inline-block";
-	parent.getElementsByClassName("im-going-button")[0]
-	    .style.display = "none";
+	var button = parent.getElementsByClassName("going-button")[0];
+	if (self.isUserGoing) {
+	    button.textContent = "Not going";
+	    button.removeEventListener("click", self.setGoing);
+	    button.addEventListener("click", self.handleNotGoingClick);
+	} else {
+	    button.textContent = "I\'m going!";
+	    button.removeEventListener("click", self.handleNotGoingClick);
+	    button.addEventListener("click", self.setGoing);
+	}
 	parent.getElementsByClassName("result-going")[0].remove();
 	parent.appendChild(createElementNumberGoing());
     }
@@ -231,31 +264,14 @@ function BarResult(barData) {
     function handleNotGoingResponse(response) {
 	response = JSON.parse(response);
 	if (response.success && response.id == self.yelpId) {
+	    self.isUserGoing = false;
 	    self.numberGoing--;
-	    setNotGoingElements();
+	    setGoingElements();
 	} else {
 	    displayError("Sorry, an error occurred");
 	}
     }
-
-    function setNotGoingElements() {
-	var parent = $("result-" + self.yelpId);
-	parent.getElementsByClassName("im-going-button")[0]
-	    .style.display = "inline-block";
-	parent.getElementsByClassName("not-going-button")[0]
-	    .style.display = "none";
-	parent.getElementsByClassName("result-going")[0].remove();
-	parent.appendChild(createElementNumberGoing());	
-    }
-    
 }
-
-function displayError(err) {
-    $("message").textContent = err;
-    showDialog("message-dialog");
-    // TODO - specific errors per api
-}
-
 
 
 // MODAL DIALOG
@@ -268,6 +284,12 @@ function showDialog(dialog) {
 function closeDialog(dialog) {
     $(dialog).style.opacity = 0;
     $(dialog).style.pointerEvents = "none";
+}
+
+function displayError(err) {
+    $("message").textContent = err;
+    showDialog("message-dialog");
+    // TODO - specific errors per api
 }
 
 function clearFormMessages() {

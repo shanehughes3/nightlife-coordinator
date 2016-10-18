@@ -20,6 +20,24 @@ var Bar = mongoose.model("Bar", BarSchema);
 
 
 exports.setGoing = function(user, barID, cb) {
+    // updates timestamp if user subdoc exists, passes on if not
+    Bar.findOneAndUpdate(
+	{ barID: barID,
+	  "going.user": user},
+	{ $set: { "going.$.date": Date.now() }},
+	function(err, result) {
+	    if (err) {
+		cb(err);
+	    } else if (result) {
+		cb(null, result);
+	    } else {
+		insertGoing(user, barID, cb);
+	    }
+	});
+}
+
+function insertGoing (user, barID, cb) {
+    // inserts new subdoc, as called from setGoing
     Bar.findOneAndUpdate(
 	{ barID: barID },
 	{ $push: { going: {user: user} } },
@@ -30,7 +48,7 @@ exports.setGoing = function(user, barID, cb) {
 	    } else {
 		cb(null, result);
 	    }
-	});
+	});    
 }
 
 exports.setNotGoing = function(user, barID, cb) {
@@ -46,7 +64,7 @@ exports.setNotGoing = function(user, barID, cb) {
 	});
 }
 
-exports.retrieveGoing = function(barID, cb) {
+exports.retrieveNumberGoing = function(barID, cb) {
     Bar.findOne(
 	{ barID: barID },
 	"going",
@@ -57,10 +75,7 @@ exports.retrieveGoing = function(barID, cb) {
 		if (results) {
 		    var today = new Date(Date.now());
 		    var goingToday = results.going.filter(function(node) {
-			// checks if same date, truncating time
-			// TODO - timezone?
-			return node.date.toDateString() ==
-			    today.toDateString();
+			return isToday(node.date);
 		    });
 		    cb(null, goingToday.length);
 		} else {
@@ -69,4 +84,28 @@ exports.retrieveGoing = function(barID, cb) {
 		}
 	    }
 	});
+}
+
+exports.retrieveIsUserGoing = function(barID, user, cb) {
+    Bar.findOne(
+	{ barID: barID,
+	  "going.user": user },
+	"going.$",
+	function(err, result) {
+	    console.log(result); /////////////////
+	    if (err) {
+		cb(err);
+	    } else if (result && isToday(result.going[0].date)) {
+		cb(null, true);
+	    } else {
+		cb(null, false);
+	    }
+	});
+}
+
+function isToday(date) {
+    // checks if same date, truncating time
+    // TODO - timezone?
+    var today = new Date(Date.now());
+    return date.toDateString() == today.toDateString();
 }
