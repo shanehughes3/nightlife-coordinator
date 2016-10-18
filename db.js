@@ -92,7 +92,6 @@ exports.retrieveIsUserGoing = function(barID, user, cb) {
 	  "going.user": user },
 	"going.$",
 	function(err, result) {
-	    console.log(result); /////////////////
 	    if (err) {
 		cb(err);
 	    } else if (result && isToday(result.going[0].date)) {

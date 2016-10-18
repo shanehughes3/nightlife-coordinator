@@ -3,6 +3,7 @@
 
 var $ = document.getElementById.bind(document);
 var globalUsername = null;
+var lastQuery = null;
 
 document.addEventListener("DOMContentLoaded", setup);
 
@@ -47,6 +48,10 @@ function handleQueryClick() {
 }
 
 function submitQuery(offset, term) {
+    window.lastQuery = {
+	offset: offset,
+	term: term
+    };
     var xhr = new XMLHttpRequest();
     var offsetQuery = (offset) ? "&offset=" + offset : "";
     xhr.addEventListener("load", () =>
@@ -145,7 +150,7 @@ function BarResult(barData) {
 
     this.numberGoing = barData.going;
     this.yelpId = barData.id
-    this.userGoing = barData.isUserGoing;
+    this.isUserGoing = barData.isUserGoing;
 
     this.createElement = function() {
 	var div = document.createElement("div");
@@ -338,6 +343,9 @@ function handleLoginResponse(response) {
     } else {
 	$("login-message").textContent = "Success!";
 	setElementsLogIn(response.username);
+	if (window.lastQuery) {
+	    submitQuery(window.lastQuery.offset, window.lastQuery.term);
+	}
 	window.setTimeout(closeDialog, 1000, "login-dialog");
     }
 }
@@ -352,10 +360,6 @@ function setElementsLogIn(username) {
     $("greeting").style.display = "inline-block";
     $("login-view-button").style.display = "none";
     $("logout-button").style.display = "inline-block";
-    var goingButtons = document.getElementsByClassName("im-going-button");
-    for (var i = 0; i < goingButtons.length; i++) {
-	goingButtons[i].style.display = "inline-block";
-    }
 }
 
 // REGISTER
@@ -432,7 +436,7 @@ function setElementsLogOut() {
     window.globalUsername = undefined;
     $("login-view-button").style.display = "inline-block";
     $("logout-button").style.display = "none";
-    var goingButtons = document.getElementsByClassName("im-going-button");
+    var goingButtons = document.getElementsByClassName("going-button");
     for (var i = 0; i < goingButtons.length; i++) {
 	goingButtons[i].style.display = "none";
     }
