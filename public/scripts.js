@@ -16,18 +16,17 @@ function setup() {
 
 function bindButtons() {
     var dialogs = ["login-dialog", "message-dialog"];
-    
-    $("search-button").onclick = handleQueryClick;
-    $("login-view-button").onclick = () => {showDialog("login-dialog");};
-    $("login-close-button").onclick = () => {closeDialog("login-dialog");};
     dialogs.forEach(function(dialog) {
 	$(dialog).onclick = function(e) {
-	    // close when clicking outside window
+	    // close when clicking outside modal window
 	    if (e.target == this) {
 		closeDialog(dialog);
 	    }
 	}
-    });
+    });    
+    $("search-button").onclick = handleQueryClick;
+    $("login-view-button").onclick = () => {showDialog("login-dialog");};
+    $("login-close-button").onclick = () => {closeDialog("login-dialog");};
     $("message-close-button").onclick = () => {closeDialog("message-dialog");};
     $("login-submit-button").onclick = handleLoginClick;
     $("register-submit-button").onclick = handleRegisterClick;
@@ -41,6 +40,7 @@ function handleQueryClick() {
     if ($("search-term").value === "") {
 	$("message").textContent = "You must enter a search location";
 	showDialog("message-dialog");
+	resetButtonsText();
     } else {
 	$("message").textContent = "";
 	submitQuery(null, $("search-term").value);
@@ -55,7 +55,7 @@ function submitQuery(offset, term) {
     var xhr = new XMLHttpRequest();
     var offsetQuery = (offset) ? "&offset=" + offset : "";
     xhr.addEventListener("load", () =>
-			 displayResults(xhr.responseText, term, offset));
+			 displayResults(xhr.responseText));
     xhr.addEventListener("error", yelpDataError);
     xhr.addEventListener("abort", yelpDataError);
     xhr.open("GET", "/search?location=" + term + offsetQuery);
@@ -67,35 +67,34 @@ function yelpDataError() {
     resetButtonsText();
 }
 
-function displayResults(response, term, offset) {
+function displayResults(response) {
+    var results = JSON.parse(response);
     resetButtonsText();
     scrollUp();
-    results = JSON.parse(response);
     if (results.businesses) {
 	var bars = results.businesses;
 	var container = $("results");
-	while (container.firstChild) {
-	    container.removeChild(container.firstChild);
+	while (container.firstChild) {   // clear old results
+	    container.removeChild(container.firstChild); 
 	}
-	
 	bars.forEach(function(bar) {
 	    var ThisBar = new BarResult(bar);
 	    container.appendChild(ThisBar.createElement());
 	});
-	setPaginationButtons(results.total, offset, term);
+	setPaginationButtons(results.total);
     } else {
 	displayError(results.text);
     }
 }
 
-function setPaginationButtons(resultsTotal, offset, searchTerm) {
+function setPaginationButtons(resultsTotal) {
     if (resultsTotal > 15) {
-	turnOnNextButton(offset, searchTerm);
+	turnOnNextButton(window.lastQuery.offset, window.lastQuery.term);
     } else {
 	turnOffNextButton();
     }
-    if (offset > 0) {
-	turnOnPreviousButton(offset, searchTerm)
+    if (window.lastQuery.offset > 0) {
+	turnOnPreviousButton(window.lastQuery.offset, window.lastQuery.term);
     } else {
 	turnOffPreviousButton();
     }
@@ -134,15 +133,15 @@ function resetButtonsText() {
 }
 
 function scrollUp() {
-    var duration = 1000;
-    var scrollPerTick = 5 * document.body.scrollTop / duration;
-
+    var msDuration = 1000;
+    var msInterval = 5;
+    var scrollPerTick = msInterval * document.body.scrollTop / msDuration;
     var scrolling = window.setInterval(function() {
 	document.body.scrollTop = document.body.scrollTop - scrollPerTick;
 	if (document.body.scrollTop == 0) {
 	    clearInterval(scrolling);
 	}
-    }, 5);
+    }, msInterval);
 }
 
 function BarResult(barData) {
@@ -294,7 +293,6 @@ function closeDialog(dialog) {
 function displayError(err) {
     $("message").textContent = err;
     showDialog("message-dialog");
-    // TODO - specific errors per api
 }
 
 function clearFormMessages() {
@@ -340,6 +338,7 @@ function handleLoginResponse(response) {
     response = JSON.parse(response);
     if (response.error) {
 	$("login-message").textContent = response.error;
+	$("login-password").value = "";
     } else {
 	$("login-message").textContent = "Success!";
 	setElementsLogIn(response.username);
@@ -426,7 +425,7 @@ function handleLogoutSuccess(response) {
     if (response.success) {
 	setElementsLogOut();
     } else {
-	// TODO
+	handleLogoutError();
     }
 }
 
@@ -443,5 +442,5 @@ function setElementsLogOut() {
 }
 
 function handleLogoutError() {
-    // TODO
+    displayError("Sorry, an unknown error occurred");
 }

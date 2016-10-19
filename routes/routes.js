@@ -34,48 +34,53 @@ router.get("/search", function(req, res) {
 	    res.send(data);
 	});
     }).catch(function(err, data) {
-	
 	res.json(err.source);
 	console.log(err);
-	// TODO
     });
 });
 
 function addGoingData(data, user, cb) {
-    // TODO - clean up this mess
     var requests = data.businesses.map(function(business, index) {
 	return new Promise((resolve) => {
-	    db.retrieveNumberGoing(business.id, function(err, numberGoing) {
-		if (err) {
-		    console.log(err);
-		    resolve();
-		} else {
-		    data.businesses[index].going = numberGoing;
-		    if (user) {
-			db.retrieveIsUserGoing(
-			    business.id,
-			    user.username,
-			    function(err, going) {
-				if (err) {
-				    cb(err);
-				} else {
-				    data.businesses[index].isUserGoing = going;
-				    resolve();
-				}
-			    });
-		    } else {
-			data.businesses[index].isUserGoing = false;
-			resolve();
-		    }
-			
-		}
-	    });
+	    addNumberGoing(data, index, user, resolve, cb);
 	});
     });
-
     Promise.all(requests).then(() => {
 	cb(data);
     });
+}
+
+function addNumberGoing(businessesData, index, user, resolve, cb) {
+    db.retrieveNumberGoing(businessesData.businesses[index].id,
+			   function(err, numberGoing) {
+	if (err) {
+	    console.log(err);
+	    cb(err);
+	} else {
+	    businessesData.businesses[index].going = numberGoing;
+	    if (user) {
+		addIsUserGoing(businessesData, index, user, resolve, cb);
+	    } else {
+		businessesData.businesses[index].isUserGoing = false;
+		resolve();
+	    }
+	    
+	}
+    });
+}
+
+function addIsUserGoing(businessesData, index, user, resolve, cb) {
+    db.retrieveIsUserGoing(
+	businessesData.businesses[index].id,
+	user.username,
+	function(err, going) {
+	    if (err) {
+		cb(err);
+	    } else {
+		businessesData.businesses[index].isUserGoing = going;
+		resolve();
+	    }
+	});
 }
 
 router.post("/going", function(req, res) {
