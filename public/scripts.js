@@ -313,6 +313,14 @@ function clearFormMessages() {
     $("register-message").textContent = " ";
 }
 
+function clearFormFields() {
+    $("login-username").value = null;
+    $("login-password").value = null;
+    $("register-username").value = null;
+    $("register-password").value = null;
+    $("register-verify-password").value = null;
+}
+
 // LOGIN
 
 function handleLoginClick() {
@@ -353,6 +361,7 @@ function handleLoginResponse(response) {
 	$("login-message").textContent = response.error;
 	$("login-password").value = "";
     } else {
+	clearFormFields();
 	$("login-message").textContent = "Success!";
 	setElementsLogIn(response.username);
 	if (window.lastQuery) {
@@ -421,11 +430,12 @@ function handleRegisterResponse(response) {
     if (response.error) {
 	$("register-message").textContent = response.error;
     } else {
+	clearFormFields();
+	$("register-message").textContent = "Success!";
 	setElementsLogIn(response.username);
 	if (window.lastQuery) {
 	    submitQuery(window.lastQuery.offset, window.lastQuery.term);
 	}
-	$("register-message").textContent = "Success!";
 	window.setTimeout(closeDialog, 1000, "login-dialog");
     }
 }
