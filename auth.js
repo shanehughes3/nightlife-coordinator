@@ -19,7 +19,7 @@ exports.register = function(req, res, cb) {
 	    console.log(err);
 	    cb(err);
 	} else {
-	    cb(null, user.username);
+	    cb(null, user);
 	}
     });
 }

@@ -168,8 +168,16 @@ router.post("/register", function(req, res) {
 	    }
 	    res.json(output);
 	} else {
-	    res.json({
-		username: user
+	    req.login(user, function(err) {
+		if (err) {
+		    res.json({
+			error: "An unknown error occurred"
+		    });
+		} else {
+		    res.json({
+			username: user.username
+		    });
+		}
 	    });
 	}
     });
