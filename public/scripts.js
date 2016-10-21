@@ -309,8 +309,8 @@ function displayError(err) {
 }
 
 function clearFormMessages() {
-    $("login-message").textContent = "";
-    $("register-message").textContent = "";
+    $("login-message").textContent = " ";
+    $("register-message").textContent = " ";
 }
 
 // LOGIN
@@ -377,7 +377,6 @@ function setElementsLogIn(username) {
 // REGISTER
 
 function handleRegisterClick() {
-    clearFormMessages();
     if (checkRegisterForm()) {
 	submitRegister();
     }
@@ -401,25 +400,39 @@ function checkRegisterForm() {
 }
 
 function submitRegister() {
+    clearFormMessages();
     var params = {
 	username: $("register-username").value,
 	password: $("register-password").value
     };
     var xhr = new XMLHttpRequest();
-    xhr.addEventListener("load", handleRegisterResponse);
+    xhr.addEventListener("load", () =>
+			 handleRegisterResponse(xhr.responseText));
     xhr.addEventListener("error", handleRegisterError);
     xhr.addEventListener("abort", handleRegisterError);
     xhr.open("POST", "/register");
     xhr.setRequestHeader("Content-type", "application/json");
     xhr.send(JSON.stringify(params));
+    $("register-message").textContent = "Registering...";
 }
 
 function handleRegisterResponse(response) {
-    console.log(response);
+    response = JSON.parse(response);
+    if (response.error) {
+	$("register-message").textContent = response.error;
+    } else {
+	setElementsLogIn(response.username);
+	if (window.lastQuery) {
+	    submitQuery(window.lastQuery.offset, window.lastQuery.term);
+	}
+	$("register-message").textContent = "Success!";
+	window.setTimeout(closeDialog, 1000, "login-dialog");
+    }
 }
 
 function handleRegisterError(err) {
-    console.log(err);
+    $("register-message").textContent = "Sorry, an error occurred";
+    
 }
 
 // LOG OUT

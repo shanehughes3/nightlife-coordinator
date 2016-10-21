@@ -160,9 +160,17 @@ function loginFailure(err, req, res, next) {
 router.post("/register", function(req, res) {
     auth.register(req, res, function(err, user) {
 	if (err) {
-	    res.send(err);
+	    var output = {};
+	    if (err.name == "UserExistsError") {
+		output.error = "That username is already taken";
+	    } else {
+		output.error = "An unknown error occurred";
+	    }
+	    res.json(output);
 	} else {
-	    res.json(user);
+	    res.json({
+		username: user
+	    });
 	}
     });
 });
