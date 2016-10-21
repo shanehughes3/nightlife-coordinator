@@ -73,7 +73,6 @@ exports.retrieveNumberGoing = function(barID, cb) {
 		cb(err);
 	    } else {
 		if (results) {
-		    var today = new Date(Date.now());
 		    var goingToday = results.going.filter(function(node) {
 			return isToday(node.date);
 		    });
@@ -104,7 +103,7 @@ exports.retrieveIsUserGoing = function(barID, user, cb) {
 
 function isToday(date) {
     // checks if same date, truncating time
-    // TODO - timezone?
+    // for future upgrades - timezone-specific?
     var today = new Date(Date.now());
     return date.toDateString() == today.toDateString();
 }

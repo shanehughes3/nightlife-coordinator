@@ -6,28 +6,34 @@ block title
 block content
 	div(id="message-dialog" class="modal-dialog")
 		div
-			div(id="message-close-button" class="modal-close-button") X
+			div(id="message-close-button" class="modal-close-button") x
 			div(id="message")
-	form(action="javascript:void(0)")
-		input(
-			type="text"
-			name="term"
-			autofocus
-			placeholder="Location"
-			id="search-term"
-		)
-		button(
-			id="search-button"
-			type="submit"
-		) Search
-
+	div(id="search-area")
+		form(action="javascript:void(0)" id="search-form")
+			input(
+				type="text"
+				name="term"
+				autofocus
+				placeholder="Location"
+				id="search-term"
+			)
+			button(
+				id="search-button"
+				type="submit"
+			) Search
+		div(id="search-description")
+			| Search Yelp for bars in your area, then see how many people will
+			| be there tonight. Log in to say where you'll be!
 	div(id="message")
 	div(id="results")
 	button(
 		id="previous-button"
+		class="page-button"
 		style="display:none;"
 	) Previous
+	div(id="page-number")
 	button(
 		id="next-button"
+		class="page-button"
 		style="display:none;"
 	) Next

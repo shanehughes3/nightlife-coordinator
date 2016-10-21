@@ -49,7 +49,7 @@ function handleQueryClick() {
 
 function submitQuery(offset, term) {
     window.lastQuery = {
-	offset: offset,
+	offset: offset || 0,
 	term: term
     };
     var xhr = new XMLHttpRequest();
@@ -82,9 +82,21 @@ function displayResults(response) {
 	    container.appendChild(ThisBar.createElement());
 	});
 	setPaginationButtons(results.total);
+	setPageNumbers(results.total);
     } else {
 	displayError(results.text);
     }
+}
+
+function setPageNumbers(resultsTotal) {
+    const offset = window.lastQuery.offset;
+    var text = "";
+    if (offset + 15 > resultsTotal) {
+	text = (offset + 1) + "-" + resultsTotal + " of " + resultsTotal;
+    } else {
+	text = (offset + 1) + "-" + (offset + 15) + " of " + resultsTotal;
+    }
+    $("page-number").textContent = text;
 }
 
 function setPaginationButtons(resultsTotal) {
@@ -156,8 +168,8 @@ function BarResult(barData) {
 	div.setAttribute("class", "result");
 	div.setAttribute("id", "result-" + self.yelpId);
 	div.appendChild(createElementStaticData());
-	div.appendChild(createElementGoingButton());
 	div.appendChild(createElementNumberGoing());
+	div.appendChild(createElementGoingButton());
 	return div;
     }
 
@@ -166,7 +178,7 @@ function BarResult(barData) {
 	node.setAttribute("href", barData.url);
 	node.innerHTML =
 	    '<div class="result-thumbnail">' +
-	      '<img src="' + barData.image_url + '"></div>' +
+	      '<img src="' + (barData.image_url || "")  + '"></div>' +
 	    '<div class="result-details">' +
 	      '<div class="result-name">' + barData.name + '</div>' +
 	      '<div class="result-rating">' +
@@ -177,18 +189,18 @@ function BarResult(barData) {
     }
 
     function createElementGoingButton() {
-	var div = document.createElement("div");
-	div.setAttribute("class", "going-button");
-	div.style.display = (window.globalUsername) ?
+	var button = document.createElement("button");
+	button.setAttribute("class", "going-button");
+	button.style.display = (window.globalUsername) ?
 	    "inline-block" : "none";
 	if (self.isUserGoing) {
-	    div.addEventListener("click", self.handleNotGoingClick);
-	    div.textContent = "Not going";
+	    button.addEventListener("click", self.handleNotGoingClick);
+	    button.textContent = "I'm going!";
 	} else {
-	    div.addEventListener("click", self.setGoing);
-	    div.textContent = "I\'m going!";
+	    button.addEventListener("click", self.setGoing);
+	    button.textContent = "Not going";
 	}
-	return div;
+	return button;
     }
 
     function createElementNumberGoing() {
@@ -235,16 +247,17 @@ function BarResult(barData) {
 	var parent = $("result-" + self.yelpId);
 	var button = parent.getElementsByClassName("going-button")[0];
 	if (self.isUserGoing) {
-	    button.textContent = "Not going";
+	    button.textContent = "I'm going!";
 	    button.removeEventListener("click", self.setGoing);
 	    button.addEventListener("click", self.handleNotGoingClick);
 	} else {
-	    button.textContent = "I\'m going!";
+	    button.textContent = "Not going";
 	    button.removeEventListener("click", self.handleNotGoingClick);
 	    button.addEventListener("click", self.setGoing);
 	}
 	parent.getElementsByClassName("result-going")[0].remove();
-	parent.appendChild(createElementNumberGoing());
+	parent.insertBefore(createElementNumberGoing(), parent.lastChild);
+//	parent.appendChild(createElementNumberGoing());
     }
 
     this.handleNotGoingClick = function() {

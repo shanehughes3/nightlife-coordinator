@@ -6,7 +6,7 @@ const express = require("express"),
       auth = require("../auth"),
       db = require("../db");
 
-var client = yelp.createClient({
+var yelpClient = yelp.createClient({
     oauth: {
 	consumer_key: config.consumerKey,
 	consumer_secret: config.consumerSecret,
@@ -24,14 +24,22 @@ router.get("/", function(req, res) {
 });
 
 router.get("/search", function(req, res) {
-    client.search({
+    yelpClient.search({
 	term: "bar",
 	location: req.query.location,
 	limit: 15,
 	offset: req.query.offset || 0
     }).then(function(data) {
-	addGoingData(data, req.user, function(output) {
-	    res.send(data);
+	addGoingData(data, req.user, function(err) {
+	    if (err) {
+		console.log(err);
+		res.json({
+		    error: err,
+		    text: "Sorry, an unknown error occurred"
+		});
+	    } else {
+		res.send(data);
+	    }
 	});
     }).catch(function(err, data) {
 	res.json(err.source);
@@ -46,7 +54,7 @@ function addGoingData(data, user, cb) {
 	});
     });
     Promise.all(requests).then(() => {
-	cb(data);
+	cb();
     });
 }
 

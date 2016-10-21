@@ -6,32 +6,41 @@ html
 	body
 		div(id="header-bar")
 			div(
-				id="greeting"
-				style=(user ? "display: inline-block;" : false)
+				id="page-title"
 			)
-				| #{user}
+				| Nightlife Coordinator
 			div(
 				id="login-view-button"
-				style=(user ? "display:none;" : false)
+				style=(user ? "display: none;" : false)
+				class="header-button"
 			)
 				| Log In
 			div(
 				id="logout-button"
 				style=(user ? "display: inline-block;" : false)
+				class="header-button"
 			)
 				| Log Out
+			div(
+				id="greeting"
+				style=(user ? "display: inline-block;" : false)
+			)
+				| #{user}
 
 		div(id="login-dialog" class="modal-dialog")
 			div
-				div(id="login-close-button" class="modal-close-button") X
-				div
+				div(id="login-close-button" class="modal-close-button") x
+				div(class="form" id="login-form")
 					form(action="javascript:void(0)")
+						div
+							| Returning user?
 						div
 							input(
 								type="text"
 								name="username"
 								placeholder="Username"
 								id="login-username"
+								class="dialog-input"
 							)
 						div
 							input(
@@ -39,6 +48,7 @@ html
 								name="password"
 								placeholder="Password"
 								id="login-password"
+								class="dialog-input"
 							)
 						div
 							input(
@@ -47,14 +57,18 @@ html
 								id="login-submit-button"
 							)
 						div(id="login-message")
-				div
+							| &nbsp;
+				div(class="form" id="register-form")
 					form(action="javascript:void(0)")
+						div
+							| New around here?
 						div
 							input(
 								type="text"
 								name="username"
 								placeholder="Username"
 								id="register-username"
+								class="dialog-input"
 							)
 						div
 							input(
@@ -62,6 +76,7 @@ html
 								name="password"
 								placeholder="Password"
 								id="register-password"
+								class="dialog-input"
 							)
 						div
 							input(
@@ -69,6 +84,7 @@ html
 								name="password-verify"
 								placeholder="Verify password"
 								id="register-verify-password"
+								class="dialog-input"
 							)
 						div
 							input(
@@ -77,7 +93,17 @@ html
 								id="register-submit-button"
 							)
 						div(id="register-message")
-		block content
+							| &nbsp;
+
+		div(id="content")
+			block content
+		div(class="footer")
+			p(class="footer-line") Created by 
+				a(href="https://github.com/shanehughes3") Shane Hughes
+			p(class="footer-line")
+				a(href="https://github.com/shanehughes3/nightlife-coordinator")
+					| View the source 
+				| on GitHub
 
 		script(
 			type="text/javascript"
